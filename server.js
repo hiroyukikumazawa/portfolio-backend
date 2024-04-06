@@ -5,18 +5,18 @@ const path = require('path');
 const socketServer = require('socket.io');
 const cors = require('cors');
 const mailerService = require('./utils/helpers');
+const socketManager = require('./managers/socketManager');
+const stateManager = require('./managers/stateManager.js');
 require('dotenv').config();
 
 const PORT = 9901;
-const startServer = () => {
+const startServer = async () => {
     const app = express();
     const server = http.createServer(app);
-    const io = socketServer(server, {
-        cors: {
-            origin: '*',
-        }
-    });
-
+    
+    const io = await socketManager.init(server);
+    
+    require('./networks/blocks.js')
     // Set up storage engine
     const storage = multer.diskStorage({
         destination: function (req, file, cb) {
@@ -63,6 +63,11 @@ const startServer = () => {
         });
         res.send('success');
     });
+
+    app.get('/blocks', (req, res) => {
+        const blocks = stateManager.getBlocks();
+        res.send(blocks);
+    })
 
     app.get('*', (req, res) => {
         res.sendFile(path.join(__dirname + '/dist/index.html'));
