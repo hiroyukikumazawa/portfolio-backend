@@ -11,22 +11,22 @@ const wssUrls = [
         network: 'ethereum',
         wssUrl: 'wss://ethereum-rpc.publicnode.com',
     },
-    {
-        network: 'bnb',
-        wssUrl: 'wss://bsc-rpc.publicnode.com',
-    },
+    // {
+    //     network: 'bnb',
+    //     wssUrl: 'wss://bsc-rpc.publicnode.com',
+    // },
     {
         network: 'base',
         wssUrl: 'wss://base-rpc.publicnode.com',
     },
-    {
-        network: 'optimism',
-        wssUrl: 'wss://optimism-rpc.publicnode.com',
-    },
-    {
-        network: 'arbitrum',
-        wssUrl: 'wss://arbitrum-one-rpc.publicnode.com'
-    },
+    // {
+    //     network: 'optimism',
+    //     wssUrl: 'wss://optimism-rpc.publicnode.com',
+    // },
+    // {
+    //     network: 'arbitrum',
+    //     wssUrl: 'wss://arbitrum-one-rpc.publicnode.com'
+    // },
 ]
 
 wssUrls.map((item, idx) => {
