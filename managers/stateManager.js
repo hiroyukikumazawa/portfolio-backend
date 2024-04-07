@@ -8,6 +8,10 @@ let blocks = [
         block: 0,
     },
     {
+        network: 'sei',
+        block: 0,
+    },
+    {
         network: 'solana',
         block: 0,
     },
