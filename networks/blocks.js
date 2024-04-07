@@ -50,7 +50,6 @@ function setupCosmosWebSocket(item) {
                 const blockHeight = response.result.data.value.header.height;
                 const io = socketManager.getIO();
                 const data = { network: item.network, block: blockHeight }
-                console.log(data)
                 io.emit('newBlock', data)
                 stateManager.updateBlocks(data)
 
