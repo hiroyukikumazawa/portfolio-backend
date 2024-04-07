@@ -71,8 +71,8 @@ const subscriptionId = solanaProvider.onSlotChange((slotInfo) => {
 
 
 // Replace 'ws://localhost:26657/websocket' with the actual URL of your Cosmos node's WebSocket service
-const wsUrl = 'wss://cosmos-rpc.publicnode.com:443/websocket';
-const cosmosWs = new WebSocket(wsUrl);
+const cosmosWsUrl = 'wss://cosmos-rpc.publicnode.com:443/websocket';
+const cosmosWs = new WebSocket(cosmosWsUrl);
 
 cosmosWs.on('open', function open() {
     const query = '{"jsonrpc":"2.0","method":"subscribe","id":"0","params":{"query":"tm.event=\'NewBlockHeader\'"}}';

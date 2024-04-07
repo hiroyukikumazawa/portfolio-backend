@@ -1,7 +1,7 @@
 const WebSocket = require('ws');
 
 // Replace 'ws://localhost:26657/websocket' with the actual URL of your Cosmos node's WebSocket service
-const wsUrl = 'wss://cosmos-rpc.publicnode.com:443/websocket';
+const wsUrl = 'wss://evm-ws.arctic-1.seinetwork.io';
 const cosmosWs = new WebSocket(wsUrl);
 
 cosmosWs.on('open', function open() {
