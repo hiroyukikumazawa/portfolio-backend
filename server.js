@@ -7,6 +7,8 @@ const cors = require('cors');
 const mailerService = require('./utils/helpers');
 const socketManager = require('./managers/socketManager');
 const stateManager = require('./managers/stateManager.js');
+const { blockStart } = require('./networks/blocks.js');
+
 require('dotenv').config();
 
 const PORT = 9901;
@@ -16,7 +18,7 @@ const startServer = async () => {
     
     const io = await socketManager.init(server);
     
-    require('./networks/blocks.js')
+    blockStart()
     // Set up storage engine
     const storage = multer.diskStorage({
         destination: function (req, file, cb) {
