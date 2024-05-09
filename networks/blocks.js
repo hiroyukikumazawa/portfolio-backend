@@ -91,12 +91,6 @@ exports.blockStart = () => {
                 ethereumProvider.destroy();
                 setTimeout(evmConnect, 10000);
             });
-            ethereumProvider.on("close", (error) => {
-                console.error("EVM WebSocket error in " + item.network + ":", error);
-                ethereumProvider.removeAllListeners();
-                ethereumProvider.destroy();
-                setTimeout(evmConnect, 10000);
-            });
         }
     
         evmConnect();
