@@ -8,6 +8,8 @@ const mailerService = require('./utils/helpers');
 const socketManager = require('./managers/socketManager');
 const stateManager = require('./managers/stateManager.js');
 const { blockStart } = require('./networks/blocks.js');
+const { getCommitsFromUser } = require("./utils/githubServices.js");
+const { githubRepos } = require("./utils/constant.js");
 
 require('dotenv').config();
 
@@ -15,9 +17,9 @@ const PORT = 9901;
 const startServer = async () => {
     const app = express();
     const server = http.createServer(app);
-    
+
     const io = await socketManager.init(server);
-    
+
     blockStart()
     // Set up storage engine
     const storage = multer.diskStorage({
@@ -69,6 +71,16 @@ const startServer = async () => {
     app.get('/blocks', (req, res) => {
         const blocks = stateManager.getBlocks();
         res.send(blocks);
+    })
+
+    app.get('/git-contributions', async (req, res) => {
+        const allCommits = {};
+        for(repo in githubRepos) {
+            const repoUrl = `https://github.com/${githubRepos[repo]['repoOwner']}/${githubRepos[repo]['repoName']}`;
+            const commits = getCommitsFromUser(githubRepos[repo]['repoOwner'], githubRepos[repo]['repoName'], githubRepos[repo]['username']);
+            allCommits[repoUrl] = commits;
+        }
+        res.send(allCommits);
     })
 
     app.get('*', (req, res) => {
