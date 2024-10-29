@@ -4,7 +4,7 @@ require('dotenv').config();
 class MailerService {
     constructor() {
         this.transporter = nodemailer.createTransport({
-            host: "us2.smtp.mailhostbox.com",
+            host: process.env.EMAIL_HOST,
             port: 587,
             secure: false,
             auth: {
