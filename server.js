@@ -1,7 +1,8 @@
 const express = require('express');
+const fs = require('fs');
+const path = require('path');
 const multer = require('multer');
 const http = require('http');
-const path = require('path');
 const socketServer = require('socket.io');
 const cors = require('cors');
 const mailerService = require('./utils/helpers');
@@ -14,17 +15,25 @@ const { githubRepos } = require("./utils/constant.js");
 require('dotenv').config();
 
 const PORT = 9901;
+const BLOGS_DIR = path.join(__dirname, 'blogs'); // Directory to store blog files
+
+// Ensure the blogs directory exists
+if (!fs.existsSync(BLOGS_DIR)) {
+    fs.mkdirSync(BLOGS_DIR);
+}
+
 const startServer = async () => {
     const app = express();
     const server = http.createServer(app);
 
     const io = await socketManager.init(server);
 
-    blockStart()
+    blockStart();
+
     // Set up storage engine
     const storage = multer.diskStorage({
         destination: function (req, file, cb) {
-            cb(null, 'uploads/') // Destination folder
+            cb(null, 'uploads/'); // Destination folder
         },
         filename: function (req, file, cb) {
             const _fileName = path.basename(file.originalname, path.extname(file.originalname)) + '-' + Date.now() + path.extname(file.originalname);
@@ -35,16 +44,91 @@ const startServer = async () => {
 
     const upload = multer({ storage: storage });
 
-    // Middleware to enable CORS with dynamic origin support
-    app.use(cors({ origin: "*" }))
-
-    // Serve static files from the 'dist' directory
+    // Middleware
+    app.use(cors({ origin: "*" }));
     app.use(express.static(path.join(__dirname, '/dist')));
-
-    // Use built-in middleware for parsing JSON and URL-encoded bodies
     app.use(express.json());
     app.use(express.urlencoded({ extended: true }));
 
+    // Blog CRUD Routes
+
+    // Middleware to check for password
+    const checkPassword = (req, res, next) => {
+        const password = req.headers['x-api-password'];
+        if (password === process.env.BLOG_API_PASSWORD) {
+            return next();
+        }
+        res.status(403).send({ message: 'Forbidden: Invalid password' });
+    };
+
+    // Create a new blog post
+    app.post('/blogs', checkPassword, (req, res) => {
+        const { title, content, author } = req.body;
+        const id = Date.now().toString();
+        const createdAt = new Date().toISOString();
+        const blog = { id, title, content, author, createdAt };
+
+        fs.writeFile(path.join(BLOGS_DIR, `${id}.json`), JSON.stringify(blog, null, 2), (err) => {
+            if (err) return res.status(500).send({ message: 'Failed to save blog', error: err });
+            res.status(201).send({ message: 'Blog created successfully', blog });
+        });
+    });
+
+    // Read all blog posts
+    app.get('/blogs', (req, res) => {
+        fs.readdir(BLOGS_DIR, (err, files) => {
+            if (err) return res.status(500).send({ message: 'Failed to load blogs', error: err });
+
+            const blogs = files.map(file => {
+                const data = fs.readFileSync(path.join(BLOGS_DIR, file));
+                return JSON.parse(data);
+            });
+            res.send(blogs);
+        });
+    });
+
+    // Read a specific blog post
+    app.get('/blogs/:id', (req, res) => {
+        const { id } = req.params;
+        const filePath = path.join(BLOGS_DIR, `${id}.json`);
+
+        if (!fs.existsSync(filePath)) return res.status(404).send({ message: 'Blog not found' });
+
+        const data = fs.readFileSync(filePath);
+        res.send(JSON.parse(data));
+    });
+
+    // Update a blog post
+    app.put('/blogs/:id', checkPassword, (req, res) => {
+        const { id } = req.params;
+        const { title, content, author } = req.body;
+        const filePath = path.join(BLOGS_DIR, `${id}.json`);
+
+        if (!fs.existsSync(filePath)) return res.status(404).send({ message: 'Blog not found' });
+
+        const blog = JSON.parse(fs.readFileSync(filePath));
+        const updatedBlog = { ...blog, title, content, author };
+
+        fs.writeFile(filePath, JSON.stringify(updatedBlog, null, 2), (err) => {
+            if (err) return res.status(500).send({ message: 'Failed to update blog', error: err });
+            res.send({ message: 'Blog updated successfully', blog: updatedBlog });
+        });
+    });
+
+    // Delete a blog post
+    app.delete('/blogs/:id', checkPassword, (req, res) => {
+        const { id } = req.params;
+        const filePath = path.join(BLOGS_DIR, `${id}.json`);
+
+        if (!fs.existsSync(filePath)) return res.status(404).send({ message: 'Blog not found' });
+
+        fs.unlink(filePath, (err) => {
+            if (err) return res.status(500).send({ message: 'Failed to delete blog', error: err });
+            res.send({ message: 'Blog deleted successfully' });
+        });
+    });
+
+    // Existing routes
     app.post('/send-email', (req, res) => {
         const { name, email, message } = req.body;
         const mailOptions = {
@@ -71,17 +155,17 @@ const startServer = async () => {
     app.get('/blocks', (req, res) => {
         const blocks = stateManager.getBlocks();
         res.send(blocks);
-    })
+    });
 
     app.get('/git-contributions', async (req, res) => {
         const allCommits = {};
-        for(repo in githubRepos) {
+        for (let repo in githubRepos) {
             const repoUrl = `https://github.com/${githubRepos[repo]['repoOwner']}/${githubRepos[repo]['repoName']}`;
             const commits = getCommitsFromUser(githubRepos[repo]['repoOwner'], githubRepos[repo]['repoName'], githubRepos[repo]['username']);
             allCommits[repoUrl] = commits;
         }
         res.send(allCommits);
-    })
+    });
 
     app.get('*', (req, res) => {
         res.sendFile(path.join(__dirname + '/dist/index.html'));
@@ -90,11 +174,11 @@ const startServer = async () => {
     io.on('connection', (socket) => {
         console.log('A user connected');
         socket.on('test', (msg) => {
-            socket.emit('test', msg)
+            socket.emit('test', msg);
         });
 
         socket.on('ping', (msg) => {
-            socket.emit('pong', 'hello')
+            socket.emit('pong', 'hello');
         });
 
         socket.on('disconnect', () => {
@@ -105,6 +189,6 @@ const startServer = async () => {
     server.listen(PORT, '0.0.0.0', () => {
         console.log(`Server listening at http://localhost:${PORT}`);
     });
-}
+};
 
 startServer();
